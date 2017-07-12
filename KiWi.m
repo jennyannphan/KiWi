@@ -47,11 +47,13 @@ tgroup = uitabgroup('Parent', h.kiwi,'units','pixels',...
 % Define tabs
 tab1 = uitab('Parent', tgroup, 'Title', '   1   ');
 tab2 = uitab('Parent', tgroup, 'Title', '   2   ');
+
 tab3 = uitab('Parent', tgroup, 'Title', '   3   ');
 tab4 = uitab('Parent', tgroup, 'Title', '   4   ');
 tab5 = uitab('Parent', tgroup, 'Title', '   5   ');
-tab6 = uitab('Parent', tgroup, 'Title', '   6   '); 
-tab7 = uitab('Parent', tgroup, 'Title', '   7   ');
+tab6 = uitab('Parent', tgroup, 'Title', '   6   ');
+tab7 = uitab('Parent', tgroup, 'Title', '   7   '); 
+tab8 = uitab('Parent', tgroup, 'Title', '   8   ');
  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Modifies the appearance
@@ -70,12 +72,16 @@ addpath(genpath('./scripts/one'));
 addpath(genpath('./scripts/two'));
 addpath(genpath('./scripts/three'));
 addpath(genpath('./scripts/four'));
+addpath(genpath('./scripts/five'));
 
-addpath(genpath('./scripts/six'));
+addpath(genpath('./scripts/seven'));
 addpath(genpath('./scripts/right_panel'));
 addpath(genpath('./scripts/custom_fit'));
 
-%% Define Appearance
+%% Define panels
+% |1|  |2| 
+% |3|  
+
 panel_1_1= uipanel('parent', tab1,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
@@ -130,7 +136,6 @@ show_ref=imread([ImageDir '/' 'plot_ref.png']);
 handles.plot_ref=uicontrol('Parent', tab1, 'Style','Pushbutton', 'Position',[50 370 196  36], 'CData',show_ref, ...
     'Callback', {@plot_ref});
 
-
 inj_dose=imread([ImageDir '/' 'inj_dose.png']); 
 handles.button_Mbq = uicontrol('Parent', tab1, 'Style','pushbutton','Position',[112 237 130 36], 'CData', inj_dose, ...
     'Callback',{@get_injected_dose});
@@ -182,8 +187,8 @@ set(get(handles.ax1_3, 'Title'), 'String', 'Standardized Uptake Value');...
 %% FUNCTIONS IN TAB ONE
 
     function plot_ROI(source,eventdata)
-     time = evalin('base','TAC.time_min'); %
-     brain = evalin('base','TAC.ROI_activity_kbq');
+     time = evalin('base','TAC.brain_time_min'); %
+     brain = evalin('base','TAC.brain_activity.kBq');
 
      p1_1 =plot(handles.ax1_1,time,brain,'o', 'markersize', 5);
      grid(handles.ax1_1,'on'), grid(handles.ax1_1,'minor');
@@ -196,10 +201,9 @@ set(get(handles.ax1_3, 'Title'), 'String', 'Standardized Uptake Value');...
         set(get(handles.ax1_1, 'Title'), 'String', 'Brain Activity');
                         
     end
-
     function plot_ref (source,eventdata)
-            time = evalin('base','TAC.time_min'); %
-            reference_input =evalin('base','TAC.input_kbq');
+            time = evalin('base','TAC.input_time_min'); %
+            reference_input =evalin('base','TAC.input_activity.kBq');
             
             p1_2 =plot(handles.ax1_2,time,reference_input, 'ko', 'markersize', 5);
             grid(handles.ax1_2,'on'), grid(handles.ax1_2,'minor');
@@ -223,9 +227,8 @@ set(get(handles.ax1_3, 'Title'), 'String', 'Standardized Uptake Value');...
       s= str2double(get(handles.editbox_body_weigth, 'string'));
       assignin('base', 'SUV_body_weight',  s);
     end
-
     function display_SUV(source,eventdata)
-     time = evalin('base','TAC.time_min'); %
+     time = evalin('base','TAC.brain_time_min'); %
      SUV = evalin('base','SUV.ROI_SUV');
 
           p1_3 =plot(handles.ax1_3,time,SUV,'o', 'markersize', 5);
@@ -238,197 +241,98 @@ set(get(handles.ax1_3, 'Title'), 'String', 'Standardized Uptake Value');...
     end 
 
 
-%function show_button(source, eventdata)
-    %handles.button_1 = uicontrol('Parent', tab1, 'Style','pushbutton',...
-    %         'String','Import TACs               [.wta]','Position',[10 650 180 25],...
-    %         'Callback', 'importTac'); % [x,y,width, height]
-         
- %   handles.button_2a = uicontrol('Parent', tab1, 'Style','pushbutton',...
-    %         'String','Import reference         [.xlsx]','Position',[10 620 180 25],... % [x,y,width, height] button_importReference = uicontrol
-   %          'Callback', 'importRef'); %imports plasma input or reference tissue input from excel file
-         
-  %  handles.button_2b = uicontrol('Parent', tab1, 'Style','pushbutton',...
-   %          'String','Import reference         [.wta]','Position',[10 590 180 25],... % [x,y,width, height] button_importReference = uicontrol
-  %           'Callback', 'importTissueRef'); %imports plasma input or reference tissue input from excel file
-         
-  %  button_state = get(handles.button_test,'Value');
-  %  if button_state == get(handles.button_test,'Max');
- %      % set(handles.button_1,'Visible','on');
-  %      set(handles.button_2a,'Visible','on');
- %       set(handles.button_2b,'Visible','on');
-    %elseif button_state == get(handles.button_test,'Min');
-        %set(handles.Array ,'Visible','off');  
- %   end
-
-% end
-
 %% %%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%TAB_2: Dynamic parameters
+%TAB_2: Linear Interpolation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Define Appearance
 handles.background= axes('Parent', tab2 , 'units', 'pixels','Position',[0 0 1500 820]);
 imagesc(background, 'Parent', handles.background);
 set(handles.background,'handlevisibility','off','visible','off');
 
 panel_2=imread([ImageDir '/' 'panel2.png']);  
-handles.logo = uicontrol('Parent', tab2, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_2) 
-
+handles.logo = uicontrol('Parent', tab2, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_2)
 
 %% Define panels
-% |1|  |2|  |3|
-% |4|  |5|  |6|
-
+% |2_1|  |2_2| 
 panel_2_1= uipanel('parent', tab2,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
-    'Position', [300 415 360 360]);
+    'Position', [300 40 700 740]);
 
 panel_2_2= uipanel('parent', tab2,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
-    'Position', [300+360+15 415 360 360]);
+    'Position', [300+700+15 350 400 430]);
 
-panel_2_3= uipanel('parent', tab2,'fontsize',12,...
-    'backgroundColor','white',...
-    'units','pixels',...
-    'Position', [300+(360*2)+30 415 360 360]);
+step_length=imread([ImageDir '/' 'use_step_length_interpol.png']); 
+handles.button_Mbq = uicontrol('Parent', tab2, 'Style','pushbutton','Position',[112 660 130 36], 'CData', step_length, ...
+    'Callback',{@get_stepLength});
 
-% next row
-panel_2_4= uipanel('parent', tab2,'fontsize',12,...
-    'backgroundColor','white',...
-    'units','pixels',...
-    'Position', [300 30 360 360]);
+handles.editbox_stepLength= uicontrol('Parent', tab2, 'style','edit',...
+            'units','pixels',...
+            'position',[58 660+3 50 29],...  
+            'string','min',...
+            'foregroundcolor','[0.3176 0.4745 1]') ; 
+                
+compute_interpol=imread([ImageDir '/' 'compute_interpol.png']);  
+handles.compute_interpol = uicontrol('Parent', tab2, 'Style','pushbutton','Position',[50 620 196  36], 'CData', compute_interpol, ...
+    'Callback','linearInterpol');
 
-panel_2_5= uipanel('parent', tab2,'fontsize',12,...
-    'backgroundColor','white',...
-    'units','pixels',...
-    'Position', [300+360+15 30 360 360]);
+plot_data=imread([ImageDir '/' 'plot_data.png']);
+handles.plot_data = uicontrol('Parent', tab2, 'Style','pushbutton','Position',[50 580 196  36], 'CData', plot_data, ...
+    'Callback',{@plotInterpol});
 
-panel_2_6= uipanel('parent', tab2,'fontsize',12,...
-    'backgroundColor','white',...
-    'units','pixels',...
-    'Position', [300+360*2+30 30 360 360]);
+handles.ax2_1 = axes('Parent', panel_2_1 , 'units', 'pixels', 'Position',[50 50 620 620]);
+ set(get(handles.ax2_1, 'XLabel'), 'String', 'Time (min)', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax2_1, 'YLabel'), 'String', {'Activity kBq cm^{-3}'} , 'FontSize', 10, 'FontName', 'Arial'); 
 
-%% define buttons
-dynamic_variables=imread([ImageDir '/' 'compute_variables.png']);  
-handles.dynamic_variables= uicontrol('Parent', tab2, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',dynamic_variables, ...
-          'Callback', 'calc_dynamic_variables');
-
-plot_variables=imread([ImageDir '/' 'plot_variables.png']);  
-handles.button_plot_dyn = uicontrol('Parent', tab2, 'Style','Pushbutton', 'Position',[50 620 196  36], 'CData',plot_variables, ...
-          'Callback', {@plot_dynamic});
-
-
-%% Set axes PLOT time-dynamic-variable curves
-handles.ax2_1 = axes('Parent', panel_2_1 , 'units', 'pixels', 'Position',[50 50 280 280]);
- set(get(handles.ax2_1, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_1, 'YLabel'), 'String', '\nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');  
-
-handles.ax2_2 = axes('Parent', panel_2_2 , 'units', 'pixels', 'Position',[50 50 280 280]);
- set(get(handles.ax2_2, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_2, 'YLabel'), 'String', '\kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
-
-handles.ax2_3 = axes('Parent', panel_2_3 , 'units', 'pixels', 'Position',[50 50 280 280]);
- set(get(handles.ax2_3, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_3, 'YLabel'), 'String', '\Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
+ handles.ax2_2 = axes('Parent', panel_2_2 , 'units', 'pixels', 'Position',[50 50 320 320]);
+ set(get(handles.ax2_2, 'XLabel'), 'String', 'Time (min)', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax2_2, 'YLabel'), 'String', {'Activity kBq ml^{-1}'} , 'FontSize', 10, 'FontName', 'Arial');
  
-handles.ax2_4 = axes('Parent', panel_2_4 , 'units', 'pixels', 'Position',[50 50 280 280]);
- set(get(handles.ax2_4, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_4, 'YLabel'), 'String', '\nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');  
-
-handles.ax2_5 = axes('Parent', panel_2_5 , 'units', 'pixels', 'Position',[50 50 280 280]);
- set(get(handles.ax2_5, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_5, 'YLabel'), 'String', '\kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
  
-handles.ax2_6 = axes('Parent', panel_2_6 , 'units', 'pixels', 'Position',[50 50 280 280]);
- set(get(handles.ax2_6, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_6, 'YLabel'), 'String', '\Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
-
- %% Set graph titles 
- set(get(handles.ax2_1, 'Title'), 'String', 'Vol');
- set(get(handles.ax2_2, 'Title'), 'String', 'Kappa');
- set(get(handles.ax2_3, 'Title'), 'String', 'Theta');
- set(get(handles.ax2_4, 'Title'), 'String', '1/Vol');
- set(get(handles.ax2_5, 'Title'), 'String', '1/Kappa');
- set(get(handles.ax2_6, 'Title'), 'String', '1/Theta');
-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Callback function PLOT DYNAMIC DATA
- function plot_dynamic(source,eventdata) 
-
-     time = evalin('base','TAC.time_min');
-     kappa = evalin('base','dynamic.kappa');
-     theta = evalin('base','dynamic.theta');
-     vol= evalin ('base','dynamic.vol');
-     
-     kappa_reciproc = evalin ('base','dynamic.kappa_reciproc');
-     theta_reciproc = evalin ('base','dynamic.theta_reciproc');
-     vol_reciproc = evalin ('base','dynamic.vol_reciproc');
-
-          p2_1 = plot(handles.ax2_1,time,kappa,'o', 'markersize', 5);
-          p2_2 = plot(handles.ax2_2,time,theta,'o', 'markersize', 5);
-          p2_3 = plot(handles.ax2_3,time,vol,'o', 'markersize', 5);
-          p2_4 = plot(handles.ax2_4,time,kappa_reciproc,'o', 'markersize', 5);
-          p2_5 = plot(handles.ax2_5,time,theta_reciproc,'o', 'markersize', 5);
-          p2_6 = plot(handles.ax2_6,time,vol_reciproc,'o', 'markersize', 5);
-          
-          grid(handles.ax2_1,'on'), grid(handles.ax2_1,'minor');
-          grid(handles.ax2_2,'on'), grid(handles.ax2_2,'minor');
-          grid(handles.ax2_3,'on'), grid(handles.ax2_3,'minor');
-          grid(handles.ax2_4,'on'), grid(handles.ax2_4,'minor');
-          grid(handles.ax2_5,'on'), grid(handles.ax2_5,'minor');
-          grid(handles.ax2_6,'on'), grid(handles.ax2_6,'minor');
-          
-%% Set axes PLOT time-dynamic-variable curves
- set(get(handles.ax2_1, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_1, 'YLabel'), 'String', '\nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');  
-
- set(get(handles.ax2_2, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_2, 'YLabel'), 'String', '\kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
-
- set(get(handles.ax2_3, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_3, 'YLabel'), 'String', '\Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
- 
- set(get(handles.ax2_4, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_4, 'YLabel'), 'String', '\nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');  
-
- set(get(handles.ax2_5, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_5, 'YLabel'), 'String', '\kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
- 
- set(get(handles.ax2_6, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax2_6, 'YLabel'), 'String', '\Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
- 
- %% Set graph titles 
- set(get(handles.ax2_1, 'Title'), 'String', 'Vol');
- set(get(handles.ax2_2, 'Title'), 'String', 'Kappa');
- set(get(handles.ax2_3, 'Title'), 'String', 'Theta');
- set(get(handles.ax2_4, 'Title'), 'String', '1/Vol');
- set(get(handles.ax2_5, 'Title'), 'String', '1/Kappa');
- set(get(handles.ax2_6, 'Title'), 'String', '1/Theta');
-
- %%     %%%%%%%%%%%%%%%%%%%% Show legends %%%%%%%%%%%%%%%%%%%%%%%%%%
-    handle_legend = evalin('base','TAC.name');
-    legend(handles.ax2_1,handle_legend, 'Location', 'NorthEast') ;%[20 620 180 25]  
+    function get_stepLength(source, eventdata)
+        s=  str2double(get(handles.editbox_stepLength, 'string'));
+       assignin('base', 'stepLength',  s);
+    end
+    function plotInterpol(source, eventdata)
+        x=evalin('base','TAC_interpol.time_min');
+        y_brain=evalin('base','TAC_interpol.brain_activity.kBq');
+        y_plasma=evalin('base','TAC_interpol.input_activity.kBq');
+        legends = evalin('base','TAC.brain_region');
         
- end
+        p2_1 = plot(handles.ax2_1,x,y_brain,'o', 'markersize', 2, 'linewidth',3);
+        p2_2 = plot(handles.ax2_2,x,y_plasma,'o', 'markersize', 2, 'linewidth',3);
+        
+        grid(handles.ax2_1,'on'), grid(handles.ax2_1,'minor');
+        grid(handles.ax2_2,'on'), grid(handles.ax2_2,'minor');
+       
+ set(get(handles.ax2_1, 'XLabel'), 'String', 'Time (min)', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax2_1, 'YLabel'), 'String', {'Activity kBq cm^{-3}'}, 'FontSize', 10, 'FontName', 'Arial'); 
+ 
+ set(get(handles.ax2_2, 'XLabel'), 'String', 'Time (min)', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax2_2, 'YLabel'), 'String', {'Activity kBq ml^{-1}'}, 'FontSize', 10, 'FontName', 'Arial'); 
+ 
+ set(get(handles.ax2_1, 'Title'), 'String', 'Interpolated Brain Activity');
+ set(get(handles.ax2_2, 'Title'), 'String', 'Interpolated Plasma Activity');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%TAB3: SIX PLOTS TO OBTAIN VT or BINDING POTENTIAL
+ legend(handles.ax2_1,legends, 'Location', 'SouthEast') ;%[20 620 180 25]    
+    end 
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%TAB_3: Dynamic parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Define Appearance
 handles.background= axes('Parent', tab3 , 'units', 'pixels','Position',[0 0 1500 820]);
 imagesc(background, 'Parent', handles.background);
 set(handles.background,'handlevisibility','off','visible','off');
 
-
-%% Define left toolbar
 panel_3=imread([ImageDir '/' 'panel3.png']);  
 handles.logo = uicontrol('Parent', tab3, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_3) 
 
-%% Define panels
 
-% |1| |2| |3|  = |N1| |P1| |P3| = |Gjedde et al. 1982+Cumming et al. 1993| |Gjedde et al. 1982| |Reith et al. 1990|
-% |4| |5| |6|  = |N2| |P2| |P4| = |Gjedde 2000| |Logan 1990| |Nahimi 2015|
+%% Define panels
+% |1|  |2|  |3|
+% |4|  |5|  |6|
 
 panel_3_1= uipanel('parent', tab3,'fontsize',12,...
     'backgroundColor','white',...
@@ -445,6 +349,7 @@ panel_3_3= uipanel('parent', tab3,'fontsize',12,...
     'units','pixels',...
     'Position', [300+(360*2)+30 415 360 360]);
 
+% next row
 panel_3_4= uipanel('parent', tab3,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
@@ -460,113 +365,54 @@ panel_3_6= uipanel('parent', tab3,'fontsize',12,...
     'units','pixels',...
     'Position', [300+360*2+30 30 360 360]);
 
+%% define buttons
+dynamic_variables=imread([ImageDir '/' 'compute_variables.png']);  
+handles.dynamic_variables= uicontrol('Parent', tab3, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',dynamic_variables, ...
+          'Callback', 'calc_dynamic_variables');
+
+plot_variables=imread([ImageDir '/' 'plot_variables.png']);  
+handles.button_plot_dyn = uicontrol('Parent', tab3, 'Style','Pushbutton', 'Position',[50 620 196  36], 'CData',plot_variables, ...
+          'Callback', {@plot_dynamic});
 
 
-         
-%% Set axes PLOT linearized models
-handles.ax3_1 = axes('Parent', panel_3_1 , 'units', 'pixels', 'Position',[60 50 280 280]);
- set(get(handles.ax3_1, 'XLabel'), 'String', '|Vol|     \nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax3_1, 'YLabel'), 'String', '|Kappa|      \kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');       
+%% Set axes PLOT time-dynamic-variable curves
+handles.ax3_1 = axes('Parent', panel_3_1 , 'units', 'pixels', 'Position',[50 50 280 280]);
+ set(get(handles.ax3_1, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_1, 'YLabel'), 'String', '\nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');  
 
-handles.ax3_2 = axes('Parent', panel_3_2 , 'units', 'pixels', 'Position',[60 50 280 280]);
-  set(get(handles.ax3_2, 'XLabel'), 'String', '|Theta|     \Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax3_2, 'YLabel'), 'String', '|1/Kappa|     \kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+handles.ax3_2 = axes('Parent', panel_3_2 , 'units', 'pixels', 'Position',[50 50 280 280]);
+ set(get(handles.ax3_2, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_2, 'YLabel'), 'String', '\kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
 
-handles.ax3_3 = axes('Parent', panel_3_3 , 'units', 'pixels', 'Position',[60 50 280 280]);
-  set(get(handles.ax3_3, 'XLabel'), 'String', '|1/Vol|     \nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax3_3, 'YLabel'), 'String', '|1/Theta|     \Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+handles.ax3_3 = axes('Parent', panel_3_3 , 'units', 'pixels', 'Position',[50 50 280 280]);
+ set(get(handles.ax3_3, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_3, 'YLabel'), 'String', '\Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
  
-handles.ax3_4 = axes('Parent', panel_3_4 , 'units', 'pixels', 'Position',[60 50 280 280]);
-set(get(handles.ax3_4, 'XLabel'), 'String', '|Kappa|      \kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax3_4, 'YLabel'), 'String', '|Vol|     \nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');     
+handles.ax3_4 = axes('Parent', panel_3_4 , 'units', 'pixels', 'Position',[50 50 280 280]);
+ set(get(handles.ax3_4, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_4, 'YLabel'), 'String', '\nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');  
+
+handles.ax3_5 = axes('Parent', panel_3_5 , 'units', 'pixels', 'Position',[50 50 280 280]);
+ set(get(handles.ax3_5, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_5, 'YLabel'), 'String', '\kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
  
-handles.ax3_5 = axes('Parent', panel_3_5 , 'units', 'pixels', 'Position',[60 50 280 280]);
-  set(get(handles.ax3_5, 'XLabel'), 'String', '|1/Kappa|     \kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax3_5, 'YLabel'), 'String', '|Theta|     \Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
- 
-handles.ax3_6 = axes('Parent', panel_3_6 , 'units', 'pixels', 'Position',[60 50 280 280]);
-  set(get(handles.ax3_6, 'XLabel'), 'String', '|1/Theta|     \Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
- set(get(handles.ax3_6, 'YLabel'), 'String', '|1/Vol|     \nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial'); 
+handles.ax3_6 = axes('Parent', panel_3_6 , 'units', 'pixels', 'Position',[50 50 280 280]);
+ set(get(handles.ax3_6, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_6, 'YLabel'), 'String', '\Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
 
-%% Set graph titles: 
- set(get(handles.ax3_1, 'Title'), 'String', 'N1'); % Gjedde et al. 1982, Cumming et al. 1993
- set(get(handles.ax3_2, 'Title'), 'String', 'P1'); % Gjedde et al, 1982
- set(get(handles.ax3_3, 'Title'), 'String', 'P3'); % Reith et al. 1990
- 
- set(get(handles.ax3_4, 'Title'), 'String', 'N2'); % Gjedde 2000
- set(get(handles.ax3_5, 'Title'), 'String', 'P2'); % Logan 1990
- set(get(handles.ax3_6, 'Title'), 'String', 'P4 '); % Nahimi 2015
- 
-%% Define buttons:
-plot_all_models=imread([ImageDir '/' 'plot_all_models.png']);  
-handles.button_plot_lin= uicontrol('Parent', tab3, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',plot_all_models, ...
-          'Callback', {@linear_plots});
+ %% Set graph titles 
+ set(get(handles.ax3_1, 'Title'), 'String', 'Vol');
+ set(get(handles.ax3_2, 'Title'), 'String', 'Kappa');
+ set(get(handles.ax3_3, 'Title'), 'String', 'Theta');
+ set(get(handles.ax3_4, 'Title'), 'String', '1/Vol');
+ set(get(handles.ax3_5, 'Title'), 'String', '1/Kappa');
+ set(get(handles.ax3_6, 'Title'), 'String', '1/Theta');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-FrameWidth=imread([ImageDir '/' 'frame_width.png']); 
-handles.get_FrameWidth = uicontrol('Parent', tab3, 'Style','Pushbutton', 'Position',[112 507 132  36], 'CData',FrameWidth, ...
-        'Callback', {@get_FrameWidth}); % get frame width for Iterativ analysis
+%% Callback function PLOT DYNAMIC DATA
+ function plot_dynamic(source,eventdata) 
 
-    
-iterative=imread([ImageDir '/' 'compute_iterative.png']); 
-handles.compute_iterative_analysis  = uicontrol('Parent', tab3, 'Style','Pushbutton', 'Position',[50 420 196  36], 'CData',iterative, ...
-        'Callback', 'find_linear_position'); % perform iterative linear regression
-   
-show_best_fit=imread([ImageDir '/' 'show_best_fit.png']); 
-handles.display_best_fit  = uicontrol('Parent', tab3, 'Style','Pushbutton', 'Position',[50 260 196  36], 'CData',show_best_fit, ...
-        'Callback', @display_table_best_fit); % display best fitted frames
-    
-%% Insert no of frames Iterative Analysis
-handles.editbox_frame = uicontrol('Parent', tab3, 'style','edit',...
-            'units','pixels',...
-            'position',[58 510 50 29],...  %[110 570 90 22],...
-            'string','insert') ;
-        
-    function get_FrameWidth(source, eventdata)
-      s=  str2double(get(handles.editbox_frame, 'string'));
-       assignin('base', 'FrameWidth',  s);
-        
-% Select brain region for iterative analysis
-% I put it here because it is undefined until TACs and brain region names
-% are imported 
-handle.legend = evalin('base','TAC.name'); % load ROI names
-handle.region_for_iterative_analysis = uicontrol('Parent', tab3, 'Style', 'popup',... 
-                       'String', handle.legend,... % display ROI names in drop down menu
-                       'Position', [58 315 180 180], 'Fontsize', 11,...
-                       'Callback',@select_ROI);            
- 
-     function select_ROI(obj,event)
-         sels = get(handle.region_for_iterative_analysis,'String');
-         idx  = get(handle.region_for_iterative_analysis,'Value');
-         result = sels(idx);
-         assignin ('base','iterative_region_idx',idx);
-         assignin ('base','iterative_region',result);    
-     end  
-       
-    end
-
- %% Drop down menu to select brain region 
-
- 
-                   
-
-   
-    
-      function display_table_best_fit(source,eventdata)
-        handles.table_best_fit_tab3= uitable('Parent', tab3,...
-        'ColumnName', {'Start','End', 'min', 'min'},...
-        'rowname', {'N1', 'N2', 'P1',....
-        'P2', 'P3', 'P4'},...
-        'Position',[35 115 236 130]);    
-
-        frame= evalin('base', 'BestFit.all_plots');
-        set(handles.table_best_fit_tab3, 'Visible', 'on');
-        set(handles.table_best_fit_tab3, 'Data', frame, 'ColumnFormat', {'numeric'});
-      end
-                    
-
- % Callback function LINEAR PLOTS
- function linear_plots(source,eventdata)
- 
+     time = evalin('base','TAC_interpol.time_min');
      kappa = evalin('base','dynamic.kappa');
      theta = evalin('base','dynamic.theta');
      vol= evalin ('base','dynamic.vol');
@@ -574,75 +420,69 @@ handle.region_for_iterative_analysis = uicontrol('Parent', tab3, 'Style', 'popup
      kappa_reciproc = evalin ('base','dynamic.kappa_reciproc');
      theta_reciproc = evalin ('base','dynamic.theta_reciproc');
      vol_reciproc = evalin ('base','dynamic.vol_reciproc');
-      
-        p3_1 = plot(handles.ax3_1,vol,kappa, 'o','markersize',2.5,'linewidth',2);
-        p3_2 = plot(handles.ax3_2,theta,kappa_reciproc, 'o','markersize',2.5,'linewidth',2);
-        p3_3 = plot(handles.ax3_3,vol_reciproc,theta_reciproc, 'o','markersize',2.5,'linewidth',2);
+
+          p3_1 = plot(handles.ax3_1,time,kappa,'o', 'markersize', 1.5, 'LineWidth',2);
+          p3_2 = plot(handles.ax3_2,time,theta,'o', 'markersize', 1.5, 'LineWidth',2);
+          p3_3 = plot(handles.ax3_3,time,vol,'o', 'markersize', 1.5, 'LineWidth',2);
+          p3_4 = plot(handles.ax3_4,time,kappa_reciproc,'o', 'markersize', 1.5, 'LineWidth',2);
+          p3_5 = plot(handles.ax3_5,time,theta_reciproc,'o', 'markersize', 1.5, 'LineWidth',2);
+          p3_6 = plot(handles.ax3_6,time,vol_reciproc,'o', 'markersize', 1.5, 'LineWidth',2);
           
-        p3_4 = plot(handles.ax3_4,kappa,vol,'o','markersize',2.5,'linewidth',2);
-        p3_5 = plot(handles.ax3_5,kappa_reciproc,theta,'o','markersize',2.5,'linewidth',2);
-        p3_6 = plot(handles.ax3_6,theta_reciproc,vol_reciproc, 'o','markersize',2.5,'linewidth',2);
- 
- %% Set axes PLOT linearized models
-set(get(handles.ax3_1, 'XLabel'), 'String', '|Vol|     \nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');
-set(get(handles.ax3_1, 'YLabel'), 'String', '|Kappa|      \kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');       
+          grid(handles.ax3_1,'on'), grid(handles.ax3_1,'minor');
+          grid(handles.ax3_2,'on'), grid(handles.ax3_2,'minor');
+          grid(handles.ax3_3,'on'), grid(handles.ax3_3,'minor');
+          grid(handles.ax3_4,'on'), grid(handles.ax3_4,'minor');
+          grid(handles.ax3_5,'on'), grid(handles.ax3_5,'minor');
+          grid(handles.ax3_6,'on'), grid(handles.ax3_6,'minor');
+          
+%% Set axes PLOT time-dynamic-variable curves
+ set(get(handles.ax3_1, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_1, 'YLabel'), 'String', '\nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');  
 
-set(get(handles.ax3_2, 'XLabel'), 'String', '|Theta|     \Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
-set(get(handles.ax3_2, 'YLabel'), 'String', '|1/Kappa|     \kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_2, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_2, 'YLabel'), 'String', '\kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
 
-set(get(handles.ax3_3, 'XLabel'), 'String', '|1/Vol|     \nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
-set(get(handles.ax3_3, 'YLabel'), 'String', '|1/Theta|     \Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_3, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_3, 'YLabel'), 'String', '\Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
  
-set(get(handles.ax3_4, 'XLabel'), 'String', '|Kappa|      \kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
-set(get(handles.ax3_4, 'YLabel'), 'String', '|Vol|     \nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');     
- 
-set(get(handles.ax3_5, 'XLabel'), 'String', '|1/Kappa|     \kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
-set(get(handles.ax3_5, 'YLabel'), 'String', '|Theta|     \Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
-set(get(handles.ax3_6, 'XLabel'), 'String', '|1/Theta|     \Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
-set(get(handles.ax3_6, 'YLabel'), 'String', '|1/Vol|     \nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial'); 
+ set(get(handles.ax3_4, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_4, 'YLabel'), 'String', '\nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');  
 
-%% Set graph titles: 
- set(get(handles.ax3_1, 'Title'), 'String', 'N1'); % Gjedde et al. 1982, Cumming et al. 1993
- set(get(handles.ax3_2, 'Title'), 'String', 'P1'); % Gjedde et al, 1982
- set(get(handles.ax3_3, 'Title'), 'String', 'P3'); % Reith et al. 1990
+ set(get(handles.ax3_5, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_5, 'YLabel'), 'String', '\kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
  
- set(get(handles.ax3_4, 'Title'), 'String', 'N2'); % Gjedde 2000
- set(get(handles.ax3_5, 'Title'), 'String', 'P2'); % Logan 1990
- set(get(handles.ax3_6, 'Title'), 'String', 'P4 '); % Nahimi 2015
+ set(get(handles.ax3_6, 'XLabel'), 'String', 'Time [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax3_6, 'YLabel'), 'String', '\Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
  
-%%     %%%%%%%%%%%%%%%%%%%% Show legends %%%%%%%%%%%%%%%%%%%%%%%%%%
-    handle_legend = evalin('base','TAC.name');
-    legend(handles.ax3_1,handle_legend, 'Location', 'NorthEast') ;%[20 620 180 25]  
+ %% Set graph titles 
+ set(get(handles.ax3_1, 'Title'), 'String', 'Vol');
+ set(get(handles.ax3_2, 'Title'), 'String', 'Kappa');
+ set(get(handles.ax3_3, 'Title'), 'String', 'Theta');
+ set(get(handles.ax3_4, 'Title'), 'String', '1/Vol');
+ set(get(handles.ax3_5, 'Title'), 'String', '1/Kappa');
+ set(get(handles.ax3_6, 'Title'), 'String', '1/Theta');
+
+ %%     %%%%%%%%%%%%%%%%%%%% Show legends %%%%%%%%%%%%%%%%%%%%%%%%%%
+    legends = evalin('base','dynamic.brain_region');
+    legend(handles.ax3_1,legends, 'Location', 'NorthEast') ;%[20 620 180 25]  
         
  end
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%tab4: LINEARIZED PLOTS - BEST FIT
+%TAB_4: SIX PLOTS TO OBTAIN VT or BINDING POTENTIAL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Define Appearance
 handles.background= axes('Parent', tab4 , 'units', 'pixels','Position',[0 0 1500 820]);
 imagesc(background, 'Parent', handles.background);
 set(handles.background,'handlevisibility','off','visible','off');
+
 
 %% Define left toolbar
 panel_4=imread([ImageDir '/' 'panel4.png']);  
 handles.logo = uicontrol('Parent', tab4, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_4) 
 
+%% Define panels
 
-
-compute_values=imread([ImageDir '/' 'compute_values.png']);  
-handles.button_compute_values= uicontrol('Parent', tab4, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',compute_values, ...
-          'Callback', 'linear_fit_calculator');
-
-plot_linearizations=imread([ImageDir '/' 'plot_linearizations.png']);  
-handles.button_plot_linearizations= uicontrol('Parent', tab4, 'Style','Pushbutton', 'Position',[50 620 196  36], 'CData',plot_linearizations, ...
-          'Callback', {@best_fit});      
-
-show_best_fit=imread([ImageDir '/' 'show_best_fit.png']); 
-handles.display_best_fit_repeat  = uicontrol('Parent', tab4, 'Style','Pushbutton', 'Position',[50 260 196  36], 'CData',show_best_fit, ...
-        'Callback', @display_table_best_fit_repeat);
- 
-%% Define panels    
 % |1| |2| |3|  = |N1| |P1| |P3| = |Gjedde et al. 1982+Cumming et al. 1993| |Gjedde et al. 1982| |Reith et al. 1990|
 % |4| |5| |6|  = |N2| |P2| |P4| = |Gjedde 2000| |Logan 1990| |Nahimi 2015|
 
@@ -676,7 +516,213 @@ panel_4_6= uipanel('parent', tab4,'fontsize',12,...
     'units','pixels',...
     'Position', [300+360*2+30 30 360 360]);
 
-panel_legend= uipanel('parent', tab4,'fontsize',12,...
+%% Set axes PLOT linearized models
+handles.ax4_1 = axes('Parent', panel_4_1 , 'units', 'pixels', 'Position',[60 50 280 280]);
+ set(get(handles.ax4_1, 'XLabel'), 'String', '|Vol|     \nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax4_1, 'YLabel'), 'String', '|Kappa|      \kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');       
+
+handles.ax4_2 = axes('Parent', panel_4_2 , 'units', 'pixels', 'Position',[60 50 280 280]);
+  set(get(handles.ax4_2, 'XLabel'), 'String', '|Theta|     \Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax4_2, 'YLabel'), 'String', '|1/Kappa|     \kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+
+handles.ax4_3 = axes('Parent', panel_4_3 , 'units', 'pixels', 'Position',[60 50 280 280]);
+  set(get(handles.ax4_3, 'XLabel'), 'String', '|1/Vol|     \nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax4_3, 'YLabel'), 'String', '|1/Theta|     \Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+ 
+handles.ax4_4 = axes('Parent', panel_4_4 , 'units', 'pixels', 'Position',[60 50 280 280]);
+set(get(handles.ax4_4, 'XLabel'), 'String', '|Kappa|      \kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax4_4, 'YLabel'), 'String', '|Vol|     \nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');     
+ 
+handles.ax4_5 = axes('Parent', panel_4_5 , 'units', 'pixels', 'Position',[60 50 280 280]);
+  set(get(handles.ax4_5, 'XLabel'), 'String', '|1/Kappa|     \kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax4_5, 'YLabel'), 'String', '|Theta|     \Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
+ 
+handles.ax4_6 = axes('Parent', panel_4_6 , 'units', 'pixels', 'Position',[60 50 280 280]);
+  set(get(handles.ax4_6, 'XLabel'), 'String', '|1/Theta|     \Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.ax4_6, 'YLabel'), 'String', '|1/Vol|     \nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial'); 
+
+%% Set graph titles: 
+ set(get(handles.ax4_1, 'Title'), 'String', 'N1'); % Gjedde et al. 1982, Cumming et al. 1993
+ set(get(handles.ax4_2, 'Title'), 'String', 'P1'); % Gjedde et al, 1982
+ set(get(handles.ax4_3, 'Title'), 'String', 'P3'); % Reith et al. 1990
+ 
+ set(get(handles.ax4_4, 'Title'), 'String', 'N2'); % Gjedde 2000
+ set(get(handles.ax4_5, 'Title'), 'String', 'P2'); % Logan 1990
+ set(get(handles.ax4_6, 'Title'), 'String', 'P4 '); % Nahimi 2015
+ 
+%% Define buttons:
+plot_all_models=imread([ImageDir '/' 'plot_all_models.png']);  
+handles.button_plot_lin= uicontrol('Parent', tab4, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',plot_all_models, ...
+          'Callback', {@linear_plots});
+
+FrameLength=imread([ImageDir '/' 'frame_width.png']); 
+handles.get_FrameLength = uicontrol('Parent', tab4, 'Style','Pushbutton', 'Position',[112 507 132  36], 'CData',FrameLength, ...
+        'Callback', {@get_FrameLength}); % get frame width for Iterativ analysis
+
+iterative=imread([ImageDir '/' 'compute_iterative.png']); 
+handles.compute_iterative_analysis  = uicontrol('Parent', tab4, 'Style','Pushbutton', 'Position',[50 420 196  36], 'CData',iterative, ...
+        'Callback', 'find_linear_position'); % perform iterative linear regression
+   
+show_best_fit=imread([ImageDir '/' 'show_best_fit.png']); 
+handles.display_best_fit  = uicontrol('Parent', tab4, 'Style','Pushbutton', 'Position',[50 260 196  36], 'CData',show_best_fit, ...
+        'Callback', @display_table_best_fit); % display best fitted frames
+    
+%% Insert no of frames Iterative Analysis
+handles.editbox_FrameLength = uicontrol('Parent', tab4, 'style','edit',...
+            'units','pixels',...
+            'position',[58 510 50 29],...  %[110 570 90 22],...
+            'string','min') ;
+        
+    function get_FrameLength(source, eventdata)
+      s=  str2double(get(handles.editbox_FrameLength, 'string'));
+       assignin('base', 'FrameLength',  s);
+        
+% Select brain region for iterative analysis
+% I put it here because it is undefined until TACs and brain region names
+% are imported 
+legends = evalin('base','TAC.brain_region'); % load ROI names 
+handle.region_for_iterative_analysis = uicontrol('Parent', tab4, 'Style', 'popup',... 
+                       'String', legends,... % display ROI names in drop down menu
+                       'Position', [58 315 180 180], 'Fontsize', 11,...
+                       'Callback',@select_ROI);            
+ 
+     function select_ROI(obj,event)
+         sels = get(handle.region_for_iterative_analysis,'String');
+         idx  = get(handle.region_for_iterative_analysis,'Value');
+         result = sels(idx);
+         assignin ('base','iterative_region_idx',idx);
+         assignin ('base','iterative_region',result);    
+     end  
+       
+    end
+
+ %% Drop down menu to select brain region 
+      function display_table_best_fit(source,eventdata)
+        handles.table_best_fit_tab4= uitable('Parent', tab4,...
+        'ColumnName', {'Start','End', 'min', 'min'},...
+        'rowname', {'N1', 'N2', 'P1',....
+        'P2', 'P3', 'P4'},...
+        'Position',[35 115 236 130]);    
+
+        frame= evalin('base', 'BestFit.all_plots');
+        set(handles.table_best_fit_tab4, 'Visible', 'on');
+        set(handles.table_best_fit_tab4, 'Data', frame, 'ColumnFormat', {'numeric'});
+      end
+                    
+
+ % Callback function LINEAR PLOTS
+ function linear_plots(source,eventdata)
+ 
+     kappa = evalin('base','dynamic.kappa');
+     theta = evalin('base','dynamic.theta');
+     vol= evalin ('base','dynamic.vol');
+     
+     kappa_reciproc = evalin ('base','dynamic.kappa_reciproc');
+     theta_reciproc = evalin ('base','dynamic.theta_reciproc');
+     vol_reciproc = evalin ('base','dynamic.vol_reciproc');
+      
+        p3_1 = plot(handles.ax4_1,vol,kappa, 'o','markersize',2.5,'linewidth',2);
+        p3_2 = plot(handles.ax4_2,theta,kappa_reciproc, 'o','markersize',2.5,'linewidth',2);
+        p3_3 = plot(handles.ax4_3,vol_reciproc,theta_reciproc, 'o','markersize',2.5,'linewidth',2);
+          
+        p3_4 = plot(handles.ax4_4,kappa,vol,'o','markersize',2.5,'linewidth',2);
+        p3_5 = plot(handles.ax4_5,kappa_reciproc,theta,'o','markersize',2.5,'linewidth',2);
+        p3_6 = plot(handles.ax4_6,theta_reciproc,vol_reciproc, 'o','markersize',2.5,'linewidth',2);
+ 
+ %% Set axes PLOT linearized models
+set(get(handles.ax4_1, 'XLabel'), 'String', '|Vol|     \nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');
+set(get(handles.ax4_1, 'YLabel'), 'String', '|Kappa|      \kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');       
+
+set(get(handles.ax4_2, 'XLabel'), 'String', '|Theta|     \Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
+set(get(handles.ax4_2, 'YLabel'), 'String', '|1/Kappa|     \kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+
+set(get(handles.ax4_3, 'XLabel'), 'String', '|1/Vol|     \nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+set(get(handles.ax4_3, 'YLabel'), 'String', '|1/Theta|     \Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+ 
+set(get(handles.ax4_4, 'XLabel'), 'String', '|Kappa|      \kappa [ml cm^{-3} min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+set(get(handles.ax4_4, 'YLabel'), 'String', '|Vol|     \nu [ml cm^{-3}]', 'FontSize', 10, 'FontName', 'Arial');     
+ 
+set(get(handles.ax4_5, 'XLabel'), 'String', '|1/Kappa|     \kappa^{-1} [min cm^{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+set(get(handles.ax4_5, 'YLabel'), 'String', '|Theta|     \Theta [min]', 'FontSize', 10, 'FontName', 'Arial');
+set(get(handles.ax4_6, 'XLabel'), 'String', '|1/Theta|     \Theta^{-1} [min^{-1}]', 'FontSize', 10, 'FontName', 'Arial');
+set(get(handles.ax4_6, 'YLabel'), 'String', '|1/Vol|     \nu^{-1} [cm{3} ml^{-1}]', 'FontSize', 10, 'FontName', 'Arial'); 
+
+%% Set graph titles: 
+ set(get(handles.ax4_1, 'Title'), 'String', 'N1'); % Gjedde et al. 1982, Cumming et al. 1993
+ set(get(handles.ax4_2, 'Title'), 'String', 'P1'); % Gjedde et al, 1982
+ set(get(handles.ax4_3, 'Title'), 'String', 'P3'); % Reith et al. 1990
+ 
+ set(get(handles.ax4_4, 'Title'), 'String', 'N2'); % Gjedde 2000
+ set(get(handles.ax4_5, 'Title'), 'String', 'P2'); % Logan 1990
+ set(get(handles.ax4_6, 'Title'), 'String', 'P4 '); % Nahimi 2015
+ 
+%%     %%%%%%%%%%%%%%%%%%%% Show legends %%%%%%%%%%%%%%%%%%%%%%%%%%
+    legends = evalin('base','TAC.brain_region');
+    legend(handles.ax4_1,legends, 'Location', 'NorthEast') ;%[20 620 180 25]  
+        
+ end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%TAB_5: LINEARIZED PLOTS - BEST FIT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
+handles.background= axes('Parent', tab5 , 'units', 'pixels','Position',[0 0 1500 820]);
+imagesc(background, 'Parent', handles.background);
+set(handles.background,'handlevisibility','off','visible','off');
+
+%% Define left toolbar
+panel_5=imread([ImageDir '/' 'panel5.png']);  
+handles.logo = uicontrol('Parent', tab5, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_5) 
+
+
+
+compute_values=imread([ImageDir '/' 'compute_values.png']);  
+handles.button_compute_values= uicontrol('Parent', tab5, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',compute_values, ...
+          'Callback', 'linear_fit_calculator');
+
+plot_linearizations=imread([ImageDir '/' 'plot_linearizations.png']);  
+handles.button_plot_linearizations= uicontrol('Parent', tab5, 'Style','Pushbutton', 'Position',[50 620 196  36], 'CData',plot_linearizations, ...
+          'Callback', {@best_fit});      
+
+show_best_fit=imread([ImageDir '/' 'show_best_fit.png']); 
+handles.display_best_fit_repeat  = uicontrol('Parent', tab5, 'Style','Pushbutton', 'Position',[50 260 196  36], 'CData',show_best_fit, ...
+        'Callback', @display_table_best_fit_repeat);
+ 
+%% Define panels    
+% |1| |2| |3|  = |N1| |P1| |P3| = |Gjedde et al. 1982+Cumming et al. 1993| |Gjedde et al. 1982| |Reith et al. 1990|
+% |4| |5| |6|  = |N2| |P2| |P4| = |Gjedde 2000| |Logan 1990| |Nahimi 2015|
+
+panel_5_1= uipanel('parent', tab5,'fontsize',12,...
+    'backgroundColor','white',...
+    'units','pixels',...
+    'Position', [300 415 360 360]);
+
+panel_5_2= uipanel('parent', tab5,'fontsize',12,...
+    'backgroundColor','white',...
+    'units','pixels',...
+    'Position', [300+360+15 415 360 360]);
+
+panel_5_3= uipanel('parent', tab5,'fontsize',12,...
+    'backgroundColor','white',...
+    'units','pixels',...
+    'Position', [300+(360*2)+30 415 360 360]);
+
+panel_5_4= uipanel('parent', tab5,'fontsize',12,...
+    'backgroundColor','white',...
+    'units','pixels',...
+    'Position', [300 30 360 360]);
+
+panel_5_5= uipanel('parent', tab5,'fontsize',12,...
+    'backgroundColor','white',...
+    'units','pixels',...
+    'Position', [300+360+15 30 360 360]);
+
+panel_5_6= uipanel('parent', tab5,'fontsize',12,...
+    'backgroundColor','white',...
+    'units','pixels',...
+    'Position', [300+360*2+30 30 360 360]);
+
+panel_legend= uipanel('parent', tab5,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
     'Position', [65 390 180 220]);
@@ -686,13 +732,13 @@ panel_legend= uipanel('parent', tab4,'fontsize',12,...
 % |4| |5| |6|  = |N2| |P2| |P4| = |Gjedde 2000| |Logan 1990| |Nahimi 2015|
 
 %% Define axes   
-handles.ax_N1 = axes('Parent', panel_4_1 , 'units', 'pixels', 'Position',[60 50 280 280]);
-handles.ax_P1 = axes('Parent', panel_4_2 ,'units', 'pixels', 'Position',[60 50 280 280]);
-handles.ax_P3 = axes('Parent', panel_4_3 , 'units', 'pixels', 'Position',[60 50 280 280]);
+handles.ax_N1 = axes('Parent', panel_5_1 , 'units', 'pixels', 'Position',[60 50 280 280]);
+handles.ax_P1 = axes('Parent', panel_5_2 ,'units', 'pixels', 'Position',[60 50 280 280]);
+handles.ax_P3 = axes('Parent', panel_5_3 , 'units', 'pixels', 'Position',[60 50 280 280]);
 
-handles.ax_N2 = axes('Parent', panel_4_4 , 'units', 'pixels', 'Position',[60 50 280 280]);
-handles.ax_P2 = axes('Parent', panel_4_5 , 'units', 'pixels', 'Position',[60 50 280 280]);
-handles.ax_P4 = axes('Parent', panel_4_6 , 'units', 'pixels', 'Position',[60 50 280 280]);
+handles.ax_N2 = axes('Parent', panel_5_4 , 'units', 'pixels', 'Position',[60 50 280 280]);
+handles.ax_P2 = axes('Parent', panel_5_5 , 'units', 'pixels', 'Position',[60 50 280 280]);
+handles.ax_P4 = axes('Parent', panel_5_6 , 'units', 'pixels', 'Position',[60 50 280 280]);
 
 handles.legend=axes('Parent', panel_legend , 'units', 'pixels', 'Position',[0 0  0 0]);
 set(handles.legend,'handlevisibility','off','visible','off');
@@ -860,8 +906,8 @@ set(pax(2),'ytick',[]);
 % plot legends    
 legends = plot(handles.legend,vol,kappa, 'o','markersize',2.5,'linewidth',2);   
 %%     %%%%%%%%%%%%%%%%%%%% Show legends %%%%%%%%%%%%%%%%%%%%%%%%%%
-    handle_legend = evalin('base','TAC.name');
-    legend(handles.legend,handle_legend, 'Location', 'none', [550 320 0 0]) ;% (Show in a new panel)
+    legends = evalin('base','TAC.brain_region');
+    legend(handles.legend,legends, 'Location', 'none', [550 320 0 0]) ;% (Show in a new panel)
     set(handles.legend,'handlevisibility','off','visible','off');
 
 %% redefine axes and title 
@@ -897,77 +943,77 @@ set(get(handles.ax_N2, 'Title'), 'String', 'N2');
  
     
       function display_table_best_fit_repeat(source,eventdata)
-        handles.table_best_fit_tab4 = uitable('Parent', tab4,...
+        handles.table_best_fit_tab5 = uitable('Parent', tab5,...
         'ColumnName', {'Start','End', 'min', 'min'},...
         'rowname', {'N1', 'N2', 'P1',....
         'P2', 'P3', 'P4'},...
         'Position',[35 115 236 130]);   
     
         frame= evalin('base', 'BestFit.all_plots');
-        set(handles.table_best_fit_tab4, 'Visible', 'on');
-        set(handles.table_best_fit_tab4, 'Data', frame, 'ColumnFormat', {'numeric'});
+        set(handles.table_best_fit_tab5, 'Visible', 'on');
+        set(handles.table_best_fit_tab5, 'Data', frame, 'ColumnFormat', {'numeric'});
       end
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%tab5: GOODNESS OF FIT
+%TAB_6: GOODNESS OF FIT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-handles.background= axes('Parent', tab5 , 'units', 'pixels','Position',[0 0 1500 820]);
+handles.background= axes('Parent', tab6 , 'units', 'pixels','Position',[0 0 1500 820]);
 imagesc(background, 'Parent', handles.background);
 set(handles.background,'handlevisibility','off','visible','off');
 
 % |1| |2| |3|  = |N1| |P1| |P3| = |Gjedde et al. 1982+Cumming et al. 1993| |Gjedde et al. 1982| |Reith et al. 1990|
 % |4| |5| |6|  = |N2| |P2| |P4| = |Gjedde 2000| |Logan 1990| |Nahimi 2015|
 %% Define left toolbar
-panel_5=imread([ImageDir '/' 'panel5.png']);  
-handles.logo = uicontrol('Parent', tab5, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_5) 
+panel_6=imread([ImageDir '/' 'panel6.png']);  
+handles.logo = uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_6) 
 
-panel_5_1= uipanel('parent', tab5,'fontsize',12,...
+panel_6_1= uipanel('parent', tab6,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
     'Position', [300 415 360 360]);
 
-panel_5_2= uipanel('parent', tab5,'fontsize',12,...
+panel_6_2= uipanel('parent', tab6,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
     'Position', [300+360+15 415 360 360]);
 
-panel_5_3= uipanel('parent', tab5,'fontsize',12,...
+panel_6_3= uipanel('parent', tab6,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
     'Position', [300+(360*2)+30 415 360 360]);
 
 % next row
-panel_5_4= uipanel('parent', tab5,'fontsize',12,...
+panel_6_4= uipanel('parent', tab6,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
     'Position', [300 30 360 360]);
 
-panel_5_5= uipanel('parent', tab5,'fontsize',12,...
+panel_6_5= uipanel('parent', tab6,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
     'Position', [300+360+15 30 360 360]);
 
-panel_5_6= uipanel('parent', tab5,'fontsize',12,...
+panel_6_6= uipanel('parent', tab6,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
     'Position', [300+360*2+30 30 360 360]);
 
 % Define buttons
 plot_rsq=imread([ImageDir '/' 'plot_rsq.png']);  
-handles.button_plot_rsq= uicontrol('Parent', tab5, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',plot_rsq, ...
+handles.button_plot_rsq= uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',plot_rsq, ...
           'Callback', {@rsq});
       
 custom_fit=imread([ImageDir '/' 'custom_fit.png']);  
-handles.custom_fit = uicontrol('Parent', tab5, 'Style','Pushbutton', 'Position',[50 620 196  36], 'CData',custom_fit, ...
+handles.custom_fit = uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[50 620 196  36], 'CData',custom_fit, ...
           'Callback','KiWi_custom');         
          
-handles.rsq_N1 = axes('Parent', panel_5_1 , 'units', 'pixels', 'Position',[50 50 280 280]);
-handles.rsq_P1 = axes('Parent', panel_5_2 ,'units', 'pixels', 'Position',[50 50 280 280]);
-handles.rsq_P3 = axes('Parent', panel_5_3 , 'units', 'pixels', 'Position',[50 50 280 280]);
+handles.rsq_N1 = axes('Parent', panel_6_1 , 'units', 'pixels', 'Position',[50 50 280 280]);
+handles.rsq_P1 = axes('Parent', panel_6_2 ,'units', 'pixels', 'Position',[50 50 280 280]);
+handles.rsq_P3 = axes('Parent', panel_6_3 , 'units', 'pixels', 'Position',[50 50 280 280]);
 
-handles.rsq_N2 = axes('Parent', panel_5_4 , 'units', 'pixels', 'Position',[50 50 280 280]);
-handles.rsq_P2 = axes('Parent', panel_5_5 , 'units', 'pixels', 'Position',[50 50 280 280]);
-handles.rsq_P4 = axes('Parent', panel_5_6 , 'units', 'pixels', 'Position',[50 50 280 280]);
+handles.rsq_N2 = axes('Parent', panel_6_4 , 'units', 'pixels', 'Position',[50 50 280 280]);
+handles.rsq_P2 = axes('Parent', panel_6_5 , 'units', 'pixels', 'Position',[50 50 280 280]);
+handles.rsq_P4 = axes('Parent', panel_6_6 , 'units', 'pixels', 'Position',[50 50 280 280]);
 
 %% Set graph titles: 
  set(get(handles.rsq_N1, 'Title'), 'String', 'N1'); % Gjedde et al. 1982, Cumming et al. 1993
@@ -978,7 +1024,7 @@ handles.rsq_P4 = axes('Parent', panel_5_6 , 'units', 'pixels', 'Position',[50 50
  set(get(handles.rsq_P2, 'Title'), 'String', 'P2'); % Logan 1990
  set(get(handles.rsq_P4, 'Title'), 'String', 'P4'); % Nahimi 2015
  
- %% Set axes in tab5
+ %% Set axes in tab6
  set(get(handles.rsq_N1, 'XLabel'), 'String', 'Time of Last Frame [min]', 'FontSize', 10, 'FontName', 'Arial');
  set(get(handles.rsq_N1, 'YLabel'), 'String', 'R^{2}', 'FontSize', 10, 'FontName', 'Arial');  
 
@@ -1001,7 +1047,7 @@ handles.rsq_P4 = axes('Parent', panel_5_6 , 'units', 'pixels', 'Position',[50 50
 function rsq(source,eventdata) % calculates time window of best linear fit
      %% get dynamic parameters:
      rsq = evalin('base','BestFit.rsq_all');
-     time = evalin('base','TAC.time_min'); %
+     time = evalin('base','TAC_interpol.time_min'); %
      start=evalin('base','BestFit.FrameConfig.FrameWidth');
      
      N1_LastInd =evalin('base','BestFit.N1.lastInd');
@@ -1025,7 +1071,7 @@ function rsq(source,eventdata) % calculates time window of best linear fit
 % Display Rsq plots for N2 model (Gjedde et al. 1982a, Cumming et al. 1993)
 % [AX,H1,H2] = plotyy(x,H1,x,H2) 
 [pax,pLine1,pLine2] = plotyy(handles.rsq_N1,...
-         time(start:end,1),...
+         time(start+1:end,1),...
          rsq(:,1),...  %(:,2) number indicates column in BestFit.rsq_all
          time(N1_LastInd,1),...
          rsq(N1_FirstInd,1));
@@ -1046,7 +1092,7 @@ legend([pLine1;pLine2],'R^{2} of Iterative Analysis','R^{2} of Best Fit Interval
 
 % Display Rsq plots for N2 model (Gjedde 2000)
 [pax,pLine1,pLine2] = plotyy(handles.rsq_N2,...
-         time(start:end,1),...
+         time(start+1:end,1),...
          rsq(:,2),...       %(:,2) number indicates column in BestFit.rsq_all
          time(N2_LastInd,1),...
          rsq(N2_FirstInd,2)); %(:,2) number indicates column in BestFit.rsq_all
@@ -1066,7 +1112,7 @@ set(pax(2),'ylim',[0.7,1], 'ytick', []);
 
 % Display Rsq plots for P1 model (Gjedde et al, 1982b)
 [pax,pLine1,pLine2] = plotyy(handles.rsq_P1,...
-         time(start:end,1),...
+         time(start+1:end,1),...
          rsq(:,3),...       %(:,2) number indicates column in BestFit.rsq_all
          time(P1_LastInd,1),...
          rsq(P1_FirstInd,3)); %(:,2) number indicates column in BestFit.rsq_all
@@ -1085,7 +1131,7 @@ set(pax(2),'ylim',[0.7,1], 'ytick', []);
 
 % Display Rsq plots for P2 model (Logan et al, 1990)
 [pax,pLine1,pLine2] = plotyy(handles.rsq_P2,...
-         time(start:end,1),...
+         time(start+1:end,1),...
          rsq(:,4),...       %(:,2) number indicates column in BestFit.rsq_all
          time(P2_LastInd,1),...
          rsq(P2_FirstInd,4)); %(:,2) number indicates column in BestFit.rsq_all
@@ -1106,7 +1152,7 @@ set(pax(2),'ylim',[0.7,1], 'ytick', []);
 
 % Display Rsq plots for P3 model (Reith et al. 1990)
 [pax,pLine1,pLine2] = plotyy(handles.rsq_P3,...
-         time(start:end,1),...
+         time(start+1:end,1),...
          rsq(:,5),...       %(:,2) number indicates column in BestFit.rsq_all
          time(P3_LastInd,1),...
          rsq(P3_FirstInd,5)); %(:,2) number indicates column in BestFit.rsq_all
@@ -1126,7 +1172,7 @@ set(pax(2),'ylim',[0.7,1], 'ytick', []);
 
 % Display Rsq plots for P4 model (Nahimi et al. 2015)
 [pax,pLine1,pLine2] = plotyy(handles.rsq_P4,...
-         time(start:end,1),...
+         time(start+1:end,1),...
          rsq(:,6),...       %(:,2) number indicates column in BestFit.rsq_all
          time(P4_LastInd,1),...
          rsq(P4_FirstInd,6)); %(:,2) number indicates column in BestFit.rsq_all
@@ -1143,6 +1189,24 @@ set(pax(1),'ylim',[0.7,1], 'ytick', [0.7 0.8 0.9 1],...
 'Xgrid','on','Ygrid','on','XMinorGrid','on','YMinorGrid','on');    
 set(pax(2),'ylim',[0.7,1], 'ytick', []);     
 
+
+set(get(handles.rsq_N1, 'XLabel'), 'String', 'Time of Last Frame [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.rsq_N1, 'YLabel'), 'String', 'R^{2}', 'FontSize', 10, 'FontName', 'Arial');  
+
+ set(get(handles.rsq_P1, 'XLabel'), 'String', 'Time of Last Frame [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.rsq_P1, 'YLabel'), 'String', 'R^{2}', 'FontSize', 10, 'FontName', 'Arial');
+
+ set(get(handles.rsq_P3, 'XLabel'), 'String', 'Time of Last Frame [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.rsq_P3, 'YLabel'), 'String', 'R^{2}', 'FontSize', 10, 'FontName', 'Arial');
+ 
+ set(get(handles.rsq_N2, 'XLabel'), 'String', 'Time of Last Frame [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.rsq_N2, 'YLabel'), 'String', 'R^{2}', 'FontSize', 10, 'FontName', 'Arial');  
+
+ set(get(handles.rsq_P2, 'XLabel'), 'String', 'Time of Last Frame [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.rsq_P2, 'YLabel'), 'String', 'R^{2}', 'FontSize', 10, 'FontName', 'Arial');
+ 
+ set(get(handles.rsq_P4, 'XLabel'), 'String', 'Time of Last Frame [min]', 'FontSize', 10, 'FontName', 'Arial');
+ set(get(handles.rsq_P4, 'YLabel'), 'String', 'R^{2}', 'FontSize', 10, 'FontName', 'Arial');
 %% Set graph titles: 
  set(get(handles.rsq_N1, 'Title'), 'String', 'N1'); % Gjedde et al. 1982, Cumming et al. 1993
  set(get(handles.rsq_P1, 'Title'), 'String', 'P1'); % Gjedde et al, 1982
@@ -1155,56 +1219,55 @@ set(pax(2),'ylim',[0.7,1], 'ytick', []);
 end
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%tab6: SHOW RESULTS VT K1,k2'
+%TAB_7: SHOW RESULTS VT K1,k2'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Appearance
-handles.background= axes('Parent', tab6 , 'units', 'pixels','Position',[0 0 1500 820]);
+handles.background= axes('Parent', tab7 , 'units', 'pixels','Position',[0 0 1500 820]);
 imagesc(background, 'Parent', handles.background);
 set(handles.background,'handlevisibility','off','visible','off');
          
-panel_6=imread([ImageDir '/' 'panel6.png']);  
-handles.logo = uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_6)          
+panel_7=imread([ImageDir '/' 'panel7.png']);  
+handles.logo = uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_7)          
 
 % BUTTONS
 compute_steady_state_values=imread([ImageDir '/' 'compute_values.png']);  
-handles.compute_steady_state_values= uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',compute_steady_state_values, ...
+handles.compute_steady_state_values= uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',compute_steady_state_values, ...
           'Callback', 'steady_state_parameters_calculator');
 
 display_estimates=imread([ImageDir '/' 'display_estimates.png']);  
-handles.display_estimates= uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[50 620 196  36], 'CData',display_estimates, ...
+handles.display_estimates= uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[50 620 196  36], 'CData',display_estimates, ...
           'Callback', {@display_steady_state_parameters});
       
 
-
-   
+  
     function display_steady_state_parameters (source,eventdata)
 % DEFINE TABLES
        
-columnname=evalin('base','TAC.name'); % get the ROI names
+columnname=evalin('base','TAC.brain_region'); % get the ROI names
 
 % define tableVT
-handles.uitable_VT = uitable('Parent', tab6,...
+handles.uitable_VT = uitable('Parent', tab7,...
         'ColumnName', columnname,...
         'rowname', {'N1 ', 'N2 ', 'P1 ','P2 ',....
         'P3 ', 'P4 '},...
         'Position',[500 570 930 148]);
     
 % define table K1
-handles.uitable_K1 = uitable('Parent', tab6,...
+handles.uitable_K1 = uitable('Parent', tab7,...
         'ColumnName', columnname,...
         'rowname', {'N1 ', 'N2 ', 'P1 ','P2 ',....
         'P3 ', 'P4 '},...
         'Position',[500 570-170 930 148]);
      
 % define table k2
-handles.uitable_k2 = uitable('Parent', tab6,...
+handles.uitable_k2 = uitable('Parent', tab7,...
         'ColumnName', columnname,...
         'rowname', {'N1 ', 'N2 ', 'P1 ','P2 ',....
         'P3 ', 'P4 '},...
         'Position',[500 570-170*2 930 148]);
 
 % define table RSquared
-handles.uitable_rsq = uitable('Parent', tab6,...
+handles.uitable_rsq = uitable('Parent', tab7,...
         'ColumnName', columnname,...
         'rowname', {'N1 ', 'N2 ', 'P1 ',....
         'P2 ', 'P3 ', 'P4 '},...
@@ -1232,57 +1295,57 @@ handles.uitable_rsq = uitable('Parent', tab6,...
 
 %HEADINGS
 VT=imread([ImageDir '/' 'VT.png']);  
-handles.button_show_VT= uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[300 680 196  36], 'CData',VT);        
+handles.button_show_VT= uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[300 680 196  36], 'CData',VT);        
 K1=imread([ImageDir '/' 'K1.png']);  
-handles.button_show_K1= uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[300 680-170 196  36], 'CData',K1);
+handles.button_show_K1= uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[300 680-170 196  36], 'CData',K1);
 k2=imread([ImageDir '/' 'k2.png']);  
-handles.button_show_k2= uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[300 680-170*2 196  36], 'CData',k2);
+handles.button_show_k2= uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[300 680-170*2 196  36], 'CData',k2);
 rsq_values=imread([ImageDir '/' 'rsq.png']);  
-handles.button_show_rsq= uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[300 680-170*3 196  36], 'CData',rsq_values);
+handles.button_show_rsq= uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[300 680-170*3 196  36], 'CData',rsq_values);
      
 %% %%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%tab7: LINEARIZED PLOTS - BEST FIT
+%TAB_8: LINEARIZED PLOTS - BEST FIT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%-o-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-handles.background= axes('Parent', tab7 , 'units', 'pixels','Position',[0 0 1500 820]);
+handles.background= axes('Parent', tab8 , 'units', 'pixels','Position',[0 0 1500 820]);
 imagesc(background, 'Parent', handles.background);
 set(handles.background,'handlevisibility','off','visible','off');
 
 %% Define left toolbar
-panel_7=imread([ImageDir '/' 'panel7.png']);  
-handles.logo = uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_7) 
+panel_8=imread([ImageDir '/' 'panel8.png']);  
+handles.logo = uicontrol('Parent', tab8, 'Style','Pushbutton', 'Position',[0 0 270  820], 'CData',panel_8) 
 
-panel_7_1= uipanel('parent', tab7,'fontsize',12,...
+panel_8_1= uipanel('parent', tab8,'fontsize',12,...
     'backgroundColor','white',...
     'units','pixels',...
     'Position',  [300 365 525 345]);
 
 % BUTTONS
 add_notes=imread([ImageDir '/' 'add_notes.png']);  
-handles.button_plot_rsq= uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',add_notes, ...
+handles.button_plot_rsq= uicontrol('Parent', tab8, 'Style','Pushbutton', 'Position',[50 660 196  36], 'CData',add_notes, ...
           'Callback', {@saveNotes});
  %%        
-handles.editbox_notes1 = uicontrol('Parent', panel_7_1, 'style','edit',...
+handles.editbox_notes1 = uicontrol('Parent', panel_8_1, 'style','edit',...
     'units','pixels',...
     'horizontalAlignment', 'left',...
     'string','YYYY MM DD',...
     'FontSize',10,...
     'position',[160 300 314 25]);
 
-handles.editbox_notes2 = uicontrol('Parent', panel_7_1, 'style','edit',...
+handles.editbox_notes2 = uicontrol('Parent', panel_8_1, 'style','edit',...
     'units','pixels',...
     'horizontalAlignment', 'left',...
     'string','...',...
     'FontSize',10,...
     'position',[160 264 314 25]) ;  
 
-handles.editbox_notes3 = uicontrol('Parent', panel_7_1, 'style','edit',...
+handles.editbox_notes3 = uicontrol('Parent', panel_8_1, 'style','edit',...
     'units','pixels',...
     'horizontalAlignment', 'left',...
     'string','...',...
     'FontSize',10,...
     'position',[160 229 314 25]);
 
-handles.editbox_notes4 = uicontrol('Parent', panel_7_1, 'style','edit',...
+handles.editbox_notes4 = uicontrol('Parent', panel_8_1, 'style','edit',...
     'units','pixels',...
     'horizontalAlignment', 'left',...
     'string','...',...
@@ -1305,7 +1368,7 @@ function saveNotes(source, eventdata)
 end
 
 %% 
-text1 = uicontrol('Parent', panel_7_1, 'style','text',...
+text1 = uicontrol('Parent', panel_8_1, 'style','text',...
     'units','pixels',...
     'horizontalAlignment', 'left',...
     'string','Analysis date:',...
@@ -1313,7 +1376,7 @@ text1 = uicontrol('Parent', panel_7_1, 'style','text',...
     'BackgroundColor','white',...
     'position',[20 290 120 25]);
 
-text2 = uicontrol('Parent', panel_7_1, 'style','text',...
+text2 = uicontrol('Parent', panel_8_1, 'style','text',...
     'units','pixels',...
     'horizontalAlignment', 'left',...
     'string','Study ID:',...
@@ -1321,7 +1384,7 @@ text2 = uicontrol('Parent', panel_7_1, 'style','text',...
     'BackgroundColor','white',...
     'position',[20 255 120 25]) ;  
 
-text3 = uicontrol('Parent', panel_7_1, 'style','text',...
+text3 = uicontrol('Parent', panel_8_1, 'style','text',...
     'units','pixels',...
     'horizontalAlignment', 'left',...
     'string','Best fit frames',...
@@ -1339,20 +1402,15 @@ handles.save_data = uicontrol('Parent', tab1, 'Style','Pushbutton', 'Position',[
           'Callback','save_file');      
 set(handles.save_data,'TooltipString',SaveDataText);      
       
-handles.save_data = uicontrol('Parent', tab2, 'Style','Pushbutton', 'Position',[1455 660 35  35], 'CData',save_data, ...
-          'Callback','save_file');
-SaveDataText = sprintf('Click here to save data');
-set(handles.save_data,'TooltipString',SaveDataText);      
- 
 handles.save_data = uicontrol('Parent', tab3, 'Style','Pushbutton', 'Position',[1455 660 35  35], 'CData',save_data, ...
           'Callback','save_file');
 SaveDataText = sprintf('Click here to save data');
 set(handles.save_data,'TooltipString',SaveDataText);      
-
+ 
 handles.save_data = uicontrol('Parent', tab4, 'Style','Pushbutton', 'Position',[1455 660 35  35], 'CData',save_data, ...
           'Callback','save_file');
 SaveDataText = sprintf('Click here to save data');
-set(handles.save_data,'TooltipString',SaveDataText);
+set(handles.save_data,'TooltipString',SaveDataText);      
 
 handles.save_data = uicontrol('Parent', tab5, 'Style','Pushbutton', 'Position',[1455 660 35  35], 'CData',save_data, ...
           'Callback','save_file');
@@ -1369,14 +1427,15 @@ handles.save_data = uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[
 SaveDataText = sprintf('Click here to save data');
 set(handles.save_data,'TooltipString',SaveDataText);
 
+handles.save_data = uicontrol('Parent', tab8, 'Style','Pushbutton', 'Position',[1455 660 35  35], 'CData',save_data, ...
+          'Callback','save_file');
+SaveDataText = sprintf('Click here to save data');
+set(handles.save_data,'TooltipString',SaveDataText);
+
 % Clear work space button
 ClearText = sprintf('Clear Work Space'); % Text to display when you hover your mouse over button   
 clear_data=imread([ImageDir '/' 'clear.png']);  
 handles.clear_data = uicontrol('Parent', tab1, 'Style','Pushbutton', 'Position',[1455 400 35  35], 'CData',clear_data, ...
-          'Callback','clear_data');
-set(handles.clear_data,'TooltipString',ClearText);
-
-handles.clear_data = uicontrol('Parent', tab2, 'Style','Pushbutton', 'Position',[1455 400 35  35], 'CData',clear_data, ...
           'Callback','clear_data');
 set(handles.clear_data,'TooltipString',ClearText);
 
@@ -1400,6 +1459,10 @@ handles.clear_data = uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',
           'Callback','clear_data');
 set(handles.clear_data,'TooltipString',ClearText);
 
+handles.clear_data = uicontrol('Parent', tab8, 'Style','Pushbutton', 'Position',[1455 400 35  35], 'CData',clear_data, ...
+          'Callback','clear_data');
+set(handles.clear_data,'TooltipString',ClearText);
+
 % Clear work space button
 FaqText = sprintf('Go To References'); % Text to display when you hover your mouse over button   
 save_data=imread([ImageDir '/' 'faq.png']);  
@@ -1408,10 +1471,6 @@ handles.save_data = uicontrol('Parent', tab1, 'Style','Pushbutton', 'Position',[
           'Callback','FAQ');      
 set(handles.save_data,'TooltipString',FaqText);      
  
-handles.save_data = uicontrol('Parent', tab2, 'Style','Pushbutton', 'Position',[1455 400-260 35  35], 'CData',save_data, ...
-          'Callback','FAQ');      
-set(handles.save_data,'TooltipString',FaqText);   
-
 handles.save_data = uicontrol('Parent', tab3, 'Style','Pushbutton', 'Position',[1455 400-260 35  35], 'CData',save_data, ...
           'Callback','FAQ');      
 set(handles.save_data,'TooltipString',FaqText);   
@@ -1425,6 +1484,10 @@ handles.save_data = uicontrol('Parent', tab5, 'Style','Pushbutton', 'Position',[
 set(handles.save_data,'TooltipString',FaqText);   
 
 handles.save_data = uicontrol('Parent', tab6, 'Style','Pushbutton', 'Position',[1455 400-260 35  35], 'CData',save_data, ...
+          'Callback','FAQ');      
+set(handles.save_data,'TooltipString',FaqText);   
+
+handles.save_data = uicontrol('Parent', tab7, 'Style','Pushbutton', 'Position',[1455 400-260 35  35], 'CData',save_data, ...
           'Callback','FAQ');      
 set(handles.save_data,'TooltipString',FaqText);  
 %exit_text = sprintf('Exit KiWi'); % Text to display when you hover your mouse over button   

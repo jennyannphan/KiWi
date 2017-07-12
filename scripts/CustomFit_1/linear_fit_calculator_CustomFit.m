@@ -21,7 +21,7 @@ md=fitlm(xn,yn,'linear');
 CustomFit.fit.N1{2,k} = md
 
 end 
-[CustomFit.fit.N1(1,:)]=dynamic.name;
+[CustomFit.fit.N1(1,:)]=dynamic.brain_region;
 
 clearvars x y xn yn md k 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,7 +41,7 @@ md=fitlm(xn,yn,'linear');
 CustomFit.fit.N2{2,k} = md
 
 end 
-[CustomFit.fit.N2(1,:)]=dynamic.name;
+[CustomFit.fit.N2(1,:)]=dynamic.brain_region;
 clearvars x y xn yn md k 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -61,7 +61,7 @@ md=fitlm(xn,yn,'linear');
 CustomFit.fit.P1{2,k} = md
 
 end 
-[CustomFit.fit.P1(1,:)]=dynamic.name;
+[CustomFit.fit.P1(1,:)]=dynamic.brain_region;
 
 clearvars x y xn yn md k 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -82,7 +82,7 @@ md=fitlm(xn,yn,'linear');
 CustomFit.fit.P2{2,k} = md
 
 end 
-[CustomFit.fit.P2(1,:)]=dynamic.name;
+[CustomFit.fit.P2(1,:)]=dynamic.brain_region;
 clearvars x y xn yn md k 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -102,7 +102,7 @@ md=fitlm(xn,yn,'linear');
 CustomFit.fit.P3{2,k} = md
 
 end 
-[CustomFit.fit.P3(1,:)]=dynamic.name;
+[CustomFit.fit.P3(1,:)]=dynamic.brain_region;
 
 clearvars x y xn yn md k 
          
@@ -124,7 +124,7 @@ md=fitlm(xn,yn,'linear');
 CustomFit.fit.P4{2,k} = md
 
 end 
-[CustomFit.fit.P4(1,:)]=dynamic.name;
+[CustomFit.fit.P4(1,:)]=dynamic.brain_region;
 
 clearvars x y xn yn md k 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -263,7 +263,7 @@ set(pax(2),'ytick',[]);
 legends = plot(handles.legend,vol,kappa, 'o','markersize',2.5,'linewidth',2);   
 
 %%     %%%%%%%%%%%%%%%%%%%% Show legends %%%%%%%%%%%%%%%%%%%%%%%%%%
-    handle_legend = evalin('base','TAC.name');
+    handle_legend = evalin('base','TAC.brain_region');
     legend(handles.legend,handle_legend, 'Location', 'none', [550 320 0 0]) ;% (Show in a new panel)
     set(handles.legend,'handlevisibility','off','visible','off');
 
@@ -321,7 +321,7 @@ handles.custom_display_estimate_button= uicontrol('Parent', tab2, 'Style','Pushb
 
  function custom_display_estimate (source,eventdata)
  % DEFINE TABLES
-columnname=evalin('base','TAC.name'); % get the ROI names
+columnname=evalin('base','TAC.brain_region'); % get the ROI names
 
 % define table VT
 handles.uitable_VT = uitable('Parent', tab2,...

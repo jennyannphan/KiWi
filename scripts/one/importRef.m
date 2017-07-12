@@ -16,8 +16,11 @@ end
 
 % Import data if file is chosen
 data=xlsread(myFile);
-TAC.time_min=data(:,1);             % time frame in min
-TAC.input_kbq=data(:,2);  % activity in kBq/mL plasma
+TAC.input_time_min=data(:,1);             % time frame in min
+TAC.input_time_min=[0; TAC.input_time_min] % add zero to the start time
+
+TAC.input_activity.kBq=data(:,2);  % activity in kBq/mL plasma
+TAC.input_activity.kBq=[0; TAC.input_activity.kBq] % add zero to the first row
 
 clearvars data fileName pathName myFile;
 
